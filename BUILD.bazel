@@ -1,0 +1,56 @@
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "audio",
+    hdrs = ["audio.h"],
+    deps = [
+        ":audio_sdl",
+    ],
+)
+
+cc_library(
+    name = "audio_sdl",
+    srcs = ["audio_sdl.c"],
+    hdrs = ["audio_sdl.h"],
+    linkopts = ["-lSDL2"],
+)
+
+cc_library(
+    name = "functions",
+    srcs = ["functions.c"],
+    hdrs = ["functions.h"],
+)
+
+cc_library(
+    name = "oscillator",
+    srcs = ["oscillator.c"],
+    hdrs = ["oscillator.h"],
+    deps = [
+        ":audio",
+        ":functions",
+    ],
+)
+
+cc_library(
+    name = "synth",
+    srcs = ["synth.c"],
+    hdrs = ["synth.h"],
+    deps = [
+        ":oscillator",
+    ],
+)
+
+cc_binary(
+    name = "rtmidi",
+    srcs = ["rtmidi.cc"],
+    linkopts = ["-lpthread"],
+    deps = [
+        ":audio",
+        ":synth",
+        "@com_github_rtmidi//:rtmidi",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/log",
+    ],
+)

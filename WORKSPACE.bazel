@@ -1,0 +1,23 @@
+######################################################################
+# bazel rules
+######################################################################
+load("//third_party/bazel:repos.bzl", "bazel_repos")
+bazel_repos()
+load("//third_party/bazel:deps.bzl", "bazel_deps")
+bazel_deps()
+
+######################################################################
+# Google stuff: absl, googletest, protobuf
+######################################################################
+load("//third_party/google:repos.bzl", "google_repos")
+google_repos()
+load("//third_party/google:deps.bzl", "google_deps")
+google_deps()
+
+######################################################################
+# Extra libs needed for this project
+######################################################################
+load("//third_party/cpp:repos.bzl", "cpp_repos")
+cpp_repos()
+load("//third_party/cpp:deps.bzl", "cpp_deps")
+cpp_deps()
