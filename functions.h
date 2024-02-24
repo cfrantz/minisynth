@@ -7,4 +7,4 @@ int32_t saw(uint32_t theta);
 int32_t square(uint32_t theta);
 int32_t triangle(uint32_t theta);
 
-#endif // MINISYNTH_FUNCTIONS_H
+#endif  // MINISYNTH_FUNCTIONS_H

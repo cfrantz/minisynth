@@ -1,4 +1,5 @@
 #include "functions.h"
+
 #include <stdint.h>
 
 int16_t sine_table[] =
@@ -121,19 +122,21 @@ int16_t sine_table[] =
 
 int32_t sine(uint32_t theta) { return sine_table[theta % 1024]; }
 
-int32_t saw(uint32_t theta) {
-    return -32767 + (theta % 1024) * 64;
-}
+int32_t saw(uint32_t theta) { return -32767 + (theta % 1024) * 64; }
 
 int32_t triangle(uint32_t theta) {
     theta = theta % 1024;
     uint32_t phase = theta / 256;
     int32_t t = theta % 256;
-    switch(phase) {
-        case 0: return t * 128;
-        case 1: return 32768 - t * 128;
-        case 2: return -t * 128;
-        case 3: return -32768 +t * 128;
+    switch (phase) {
+        case 0:
+            return t * 128;
+        case 1:
+            return 32768 - t * 128;
+        case 2:
+            return -t * 128;
+        case 3:
+            return -32768 + t * 128;
     }
     return 0;
 }

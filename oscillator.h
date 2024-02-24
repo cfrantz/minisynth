@@ -38,6 +38,6 @@ typedef struct Oscillator {
     int16_t release;
 } oscillator_t;
 
-int32_t osc_value(oscillator_t *osc, int32_t bend, uint64_t tstep);
+int32_t osc_value(oscillator_t* osc, int32_t bend, uint64_t tstep);
 
-#endif // MINISYNTH_OSCILLATOR_H
+#endif  // MINISYNTH_OSCILLATOR_H

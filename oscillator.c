@@ -1,4 +1,5 @@
 #include "oscillator.h"
+
 #include "audio.h"
 #include "functions.h"
 
@@ -19,7 +20,7 @@ int16_t frequency[128] = {
 };
 // clang-format on
 
-int32_t osc_value(oscillator_t *osc, int32_t bend, uint64_t tstep) {
+int32_t osc_value(oscillator_t* osc, int32_t bend, uint64_t tstep) {
     if (osc->state == OscOff) return 0;
 
     uint32_t f = frequency[osc->note];
@@ -28,15 +29,19 @@ int32_t osc_value(oscillator_t *osc, int32_t bend, uint64_t tstep) {
     uint64_t delta = f * 1024;
     osc->phase += delta;
     int32_t value = 0;
-    switch(osc->function) {
+    switch (osc->function) {
         case OscSine:
-            value = sine(theta); break;
+            value = sine(theta);
+            break;
         case OscTriangle:
-            value = triangle(theta); break;
+            value = triangle(theta);
+            break;
         case OscSaw:
-            value = saw(theta); break;
+            value = saw(theta);
+            break;
         case OscSquare:
-            value = square(theta); break;
+            value = square(theta);
+            break;
         default:
             /* bad osc function */
             ;

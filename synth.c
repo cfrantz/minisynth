@@ -30,168 +30,172 @@ envelope_t envelope_preset[128];
 osc_function_t function_preset[128];
 
 void synth_init(void) {
-  for (uint32_t i = 0; i < 16; ++i) {
-    multiplier[i].attack = 32;
-    multiplier[i].decay = 32;
-    multiplier[i].release = 32;
-    pitch_bend[i] = 64;
-  }
+    for (uint32_t i = 0; i < 16; ++i) {
+        multiplier[i].attack = 32;
+        multiplier[i].decay = 32;
+        multiplier[i].release = 32;
+        pitch_bend[i] = 64;
+    }
 }
 
 void synth_set_program(uint8_t channel, uint8_t program) {
-  envelope[channel] = envelope_preset[program];
-  function[channel] = function_preset[program];
+    envelope[channel] = envelope_preset[program];
+    function[channel] = function_preset[program];
 }
 
 void synth_note_on(uint8_t channel, uint8_t note, uint8_t velocity) {
-  for (uint32_t i = 0; i < SYNTH_POLYPHONY; ++i) {
-    oscillator_t *osc = &oscillator_bank[i];
-    if (osc->state == OscOff) {
-      osc->state = OscOn;
-      osc->function = function[channel];
-      osc->note = note;
-      osc->channel = channel;
-      osc->attack = 0;
-      osc->decay = 0;
-      osc->release = 0;
-      return;
+    for (uint32_t i = 0; i < SYNTH_POLYPHONY; ++i) {
+        oscillator_t* osc = &oscillator_bank[i];
+        if (osc->state == OscOff) {
+            osc->state = OscOn;
+            osc->function = function[channel];
+            osc->note = note;
+            osc->channel = channel;
+            osc->attack = 0;
+            osc->decay = 0;
+            osc->release = 0;
+            return;
+        }
     }
-  }
 }
 
 void synth_note_off(uint8_t channel, uint8_t note, uint8_t velocity) {
-  for (uint32_t i = 0; i < SYNTH_POLYPHONY; ++i) {
-    oscillator_t *osc = &oscillator_bank[i];
-    if (osc->state != OscOff && osc->note == note && osc->channel == channel) {
-      osc->state = OscRelease;
-      return;
+    for (uint32_t i = 0; i < SYNTH_POLYPHONY; ++i) {
+        oscillator_t* osc = &oscillator_bank[i];
+        if (osc->state != OscOff && osc->note == note &&
+            osc->channel == channel) {
+            osc->state = OscRelease;
+            return;
+        }
     }
-  }
 }
 
 void synth_controller(uint8_t ch, uint8_t ctrl, uint8_t val) {
-  switch (ctrl) {
-  case 0x0c:
-    envelope[ch].attack = multiplier[ch].attack * val;
-    printf("Channel %d: attack = %d (%d)\n", ch, val, envelope[ch].attack);
-    break;
-  case 0x0d:
-    envelope[ch].decay = multiplier[ch].decay * val;
-    printf("Channel %d: decay = %d (%d)\n", ch, val, envelope[ch].decay);
-    break;
-  case 0x0e:
-    envelope[ch].sustain = val << 8;
-    envelope[ch].sustain |= val & 1 ? 0xFF : 0;
-    printf("Channel %d: sustain = %d (%d)\n", ch, val, envelope[ch].sustain);
-    break;
-  case 0x0f:
-    envelope[ch].release = multiplier[ch].release * val;
-    printf("Channel %d: release = %d (%d)\n", ch, val, envelope[ch].release);
-    break;
-  case 0x16:
-    multiplier[ch].attack = val;
-    printf("Channel %d: attack mult = %d\n", ch, val);
-    break;
-  case 0x17:
-    multiplier[ch].decay = val;
-    printf("Channel %d: decay mult = %d\n", ch, val);
-    break;
-  case 0x18:
-    val = val / 32;
-    function[ch] = val;
-    printf("Channel %d: function = %s\n", ch,
-           (val == 0)   ? "sine"
-           : (val == 1) ? "triangle"
-           : (val == 2) ? "saw"
-           : (val == 3) ? "square"
-                        : "unknown");
-    break;
-  case 0x19:
-    multiplier[ch].release = val;
-    printf("Channel %d: release mult = %d\n", ch, val);
-    break;
-  default:
-    printf("unhandled controller: %02x %02x %02x\n", ch, ctrl, val);
-  }
+    switch (ctrl) {
+        case 0x0c:
+            envelope[ch].attack = multiplier[ch].attack * val;
+            printf("Channel %d: attack = %d (%d)\n", ch, val,
+                   envelope[ch].attack);
+            break;
+        case 0x0d:
+            envelope[ch].decay = multiplier[ch].decay * val;
+            printf("Channel %d: decay = %d (%d)\n", ch, val,
+                   envelope[ch].decay);
+            break;
+        case 0x0e:
+            envelope[ch].sustain = val << 8;
+            envelope[ch].sustain |= val & 1 ? 0xFF : 0;
+            printf("Channel %d: sustain = %d (%d)\n", ch, val,
+                   envelope[ch].sustain);
+            break;
+        case 0x0f:
+            envelope[ch].release = multiplier[ch].release * val;
+            printf("Channel %d: release = %d (%d)\n", ch, val,
+                   envelope[ch].release);
+            break;
+        case 0x16:
+            multiplier[ch].attack = val;
+            printf("Channel %d: attack mult = %d\n", ch, val);
+            break;
+        case 0x17:
+            multiplier[ch].decay = val;
+            printf("Channel %d: decay mult = %d\n", ch, val);
+            break;
+        case 0x18:
+            val = val / 32;
+            function[ch] = val;
+            printf("Channel %d: function = %s\n", ch,
+                   (val == 0)   ? "sine"
+                   : (val == 1) ? "triangle"
+                   : (val == 2) ? "saw"
+                   : (val == 3) ? "square"
+                                : "unknown");
+            break;
+        case 0x19:
+            multiplier[ch].release = val;
+            printf("Channel %d: release mult = %d\n", ch, val);
+            break;
+        default:
+            printf("unhandled controller: %02x %02x %02x\n", ch, ctrl, val);
+    }
 }
 
-void synth_midi(uint8_t *message) {
-  uint8_t cmd = message[0] & 0xF0;
-  uint8_t channel = message[0] & 0x0F;
-  switch (cmd) {
-  case 0x80:
-    synth_note_off(channel, message[1], message[2]);
-    break;
-  case 0x90:
-    if (message[2]) {
-      synth_note_on(channel, message[1], message[2]);
-    } else {
-      synth_note_off(channel, message[1], message[2]);
+void synth_midi(uint8_t* message) {
+    uint8_t cmd = message[0] & 0xF0;
+    uint8_t channel = message[0] & 0x0F;
+    switch (cmd) {
+        case 0x80:
+            synth_note_off(channel, message[1], message[2]);
+            break;
+        case 0x90:
+            if (message[2]) {
+                synth_note_on(channel, message[1], message[2]);
+            } else {
+                synth_note_off(channel, message[1], message[2]);
+            }
+            break;
+        case 0xb0:
+            synth_controller(channel, message[1], message[2]);
+            break;
+        case 0xc0:
+            synth_set_program(channel, message[1]);
+            break;
+        case 0xe0:
+            pitch_bend[channel] = message[2];
+            break;
+        default:
+            printf("unhandled midi: %02x %02x %02x\n", message[0], message[1],
+                   message[2]);
     }
-    break;
-  case 0xb0:
-    synth_controller(channel, message[1], message[2]);
-    break;
-  case 0xc0:
-    synth_set_program(channel, message[1]);
-    break;
-  case 0xe0:
-    pitch_bend[channel] = message[2];
-    break;
-  default:
-    printf("unhandled midi: %02x %02x %02x\n", message[0], message[1],
-           message[2]);
-  }
 }
 
 int32_t synth_value(uint64_t tstep) {
-  int32_t value = 0;
-  for (uint32_t i = 0; i < SYNTH_POLYPHONY; ++i) {
-    oscillator_t *osc = &oscillator_bank[i];
-    if (osc->state == OscOff)
-      continue;
+    int32_t value = 0;
+    for (uint32_t i = 0; i < SYNTH_POLYPHONY; ++i) {
+        oscillator_t* osc = &oscillator_bank[i];
+        if (osc->state == OscOff) continue;
 
-    envelope_t *env = &envelope[osc->channel];
-    // TODO: pitch bend
-    int32_t bend = pitch_bend_mult[pitch_bend[osc->channel]];
-    ;
-    int32_t v = osc_value(osc, bend, tstep);
-    // Process the ADSR envelope.
-    if (osc->state == OscOn)
-      osc->state = OscAttack;
-    if (osc->state == OscAttack) {
-      if (env->attack && osc->attack < env->attack) {
-        osc->attack += 1;
-        v = v * osc->attack / env->attack;
-      } else {
-        osc->state = OscDecay;
-      }
+        envelope_t* env = &envelope[osc->channel];
+        // TODO: pitch bend
+        int32_t bend = pitch_bend_mult[pitch_bend[osc->channel]];
+        ;
+        int32_t v = osc_value(osc, bend, tstep);
+        // Process the ADSR envelope.
+        if (osc->state == OscOn) osc->state = OscAttack;
+        if (osc->state == OscAttack) {
+            if (env->attack && osc->attack < env->attack) {
+                osc->attack += 1;
+                v = v * osc->attack / env->attack;
+            } else {
+                osc->state = OscDecay;
+            }
+        }
+        if (osc->state == OscDecay) {
+            if (env->decay && osc->decay < env->decay) {
+                int32_t factor =
+                    (32767 - env->sustain) * osc->decay / env->decay;
+                v = (v * (32767 - factor)) >> 15;
+                osc->decay += 1;
+            } else {
+                osc->state = OscSustain;
+            }
+        }
+        if (osc->state == OscSustain) {
+            if (env->sustain) {
+                v = (v * env->sustain) >> 15;
+            }
+        }
+        if (osc->state == OscRelease) {
+            if (env->release && osc->release < env->release) {
+                v = (v * env->sustain) >> 15;
+                v = v * (env->release - osc->release) / env->release;
+                osc->release += 1;
+            } else {
+                osc->state = OscOff;
+                v = 0;
+            }
+        }
+        value += v;
     }
-    if (osc->state == OscDecay) {
-      if (env->decay && osc->decay < env->decay) {
-        int32_t factor = (32767 - env->sustain) * osc->decay / env->decay;
-        v = (v * (32767 - factor)) >> 15;
-        osc->decay += 1;
-      } else {
-        osc->state = OscSustain;
-      }
-    }
-    if (osc->state == OscSustain) {
-      if (env->sustain) {
-        v = (v * env->sustain) >> 15;
-      }
-    }
-    if (osc->state == OscRelease) {
-      if (env->release && osc->release < env->release) {
-        v = (v * env->sustain) >> 15;
-        v = v * (env->release - osc->release) / env->release;
-        osc->release += 1;
-      } else {
-        osc->state = OscOff;
-        v = 0;
-      }
-    }
-    value += v;
-  }
-  return value / SYNTH_POLYPHONY;
+    return value / SYNTH_POLYPHONY;
 }

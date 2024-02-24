@@ -9,4 +9,4 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
-#endif // MINISYNTH_AUDIO_H
+#endif  // MINISYNTH_AUDIO_H
