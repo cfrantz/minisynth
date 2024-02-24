@@ -20,6 +20,7 @@ ABSL_FLAG(bool, list, false, "List midi ports");
 ABSL_FLAG(int, port, -1, "Midi port to use");
 ABSL_FLAG(double, C0, 8.175, "Frequency of C0");
 ABSL_FLAG(std::string, cents, "", "Interval offsets in cents");
+ABSL_FLAG(std::string, preset, "", "MIDI instrument presets (inst=func:a:d:s:r,...)");
 
 void compute_frequency_table(double C0, const std::vector<double>& cents) {
     extern int16_t frequency[];
@@ -31,6 +32,39 @@ void compute_frequency_table(double C0, const std::vector<double>& cents) {
         if (n%12) c += cents[n%12];
         frequency[m] = C0 * std::pow(TRT, c/100.0);
     }
+}
+
+void set_presets(std::string_view presets) {
+    for(const auto& preset : absl::StrSplit(presets, ',')) {
+        std::vector<std::string_view> inst_adsr = absl::StrSplit(preset, '=');
+        if (inst_adsr.size() != 2) LOG(QFATAL) << "Expected 2 elements per preset: " << preset;
+        std::vector<std::string_view> adsr = absl::StrSplit(inst_adsr[1], ':');
+        if (adsr.size() != 5) LOG(QFATAL) << "Expected 5 elements per envelope: " << inst_adsr[1];
+        size_t i;
+        int32_t a,d,s,r;
+        if (!absl::SimpleAtoi(inst_adsr[0], &i)) LOG(QFATAL) << "Couldn't parse instrument: " << inst_adsr[0];
+        if (!absl::SimpleAtoi(adsr[1], &a)) LOG(QFATAL) << "Couldn't parse attack: " << adsr[0];
+        if (!absl::SimpleAtoi(adsr[2], &d)) LOG(QFATAL) << "Couldn't parse decay: " << adsr[1];
+        if (!absl::SimpleAtoi(adsr[3], &s)) LOG(QFATAL) << "Couldn't parse sustain: " << adsr[2];
+        if (!absl::SimpleAtoi(adsr[4], &r)) LOG(QFATAL) << "Couldn't parse release: " << adsr[3];
+        if (adsr[0] == "sin") {
+            function_preset[i] = OscSine;
+        } else if (adsr[0] == "tri") {
+            function_preset[i] = OscTriangle;
+        } else if (adsr[0] == "saw") {
+            function_preset[i] = OscSaw;
+        } else if (adsr[0] == "sqr") {
+            function_preset[i] = OscSquare;
+        }
+        envelope_preset[i].attack = (int16_t)a;
+        envelope_preset[i].decay = (int16_t)d;
+        envelope_preset[i].sustain = (int16_t)s;
+        envelope_preset[i].release = (int16_t)r;
+    }
+    for(size_t i=0; i<16; ++i) {
+        synth_set_program(i, 0);
+    }
+
 }
 
 
@@ -111,6 +145,10 @@ int main(int argc, char *argv[]) {
             }
         }
         compute_frequency_table(absl::GetFlag(FLAGS_C0), values);
+    }
+    const auto& preset = absl::GetFlag(FLAGS_preset);
+    if (!preset.empty()) {
+        set_presets(preset);
     }
 
     int port = absl::GetFlag(FLAGS_port);

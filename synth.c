@@ -26,6 +26,8 @@ envelope_t envelope[16];
 uint16_t pitch_bend[16];
 osc_function_t function[16];
 
+envelope_t envelope_preset[128];
+osc_function_t function_preset[128];
 
 void synth_init(void) {
   for (uint32_t i = 0; i < 16; ++i) {
@@ -34,6 +36,11 @@ void synth_init(void) {
     multiplier[i].release = 32;
     pitch_bend[i] = 64;
   }
+}
+
+void synth_set_program(uint8_t channel, uint8_t program) {
+  envelope[channel] = envelope_preset[program];
+  function[channel] = function_preset[program];
 }
 
 void synth_note_on(uint8_t channel, uint8_t note, uint8_t velocity) {
@@ -66,20 +73,20 @@ void synth_controller(uint8_t ch, uint8_t ctrl, uint8_t val) {
   switch (ctrl) {
   case 0x0c:
     envelope[ch].attack = multiplier[ch].attack * val;
-    printf("Channel %d: attack = %d\n", ch, val);
+    printf("Channel %d: attack = %d (%d)\n", ch, val, envelope[ch].attack);
     break;
   case 0x0d:
     envelope[ch].decay = multiplier[ch].decay * val;
-    printf("Channel %d: decay = %d\n", ch, val);
+    printf("Channel %d: decay = %d (%d)\n", ch, val, envelope[ch].decay);
     break;
   case 0x0e:
     envelope[ch].sustain = val << 8;
     envelope[ch].sustain |= val & 1 ? 0xFF : 0;
-    printf("Channel %d: sustain = %d\n", ch, val);
+    printf("Channel %d: sustain = %d (%d)\n", ch, val, envelope[ch].sustain);
     break;
   case 0x0f:
     envelope[ch].release = multiplier[ch].release * val;
-    printf("Channel %d: release = %d\n", ch, val);
+    printf("Channel %d: release = %d (%d)\n", ch, val, envelope[ch].release);
     break;
   case 0x16:
     multiplier[ch].attack = val;
@@ -90,13 +97,14 @@ void synth_controller(uint8_t ch, uint8_t ctrl, uint8_t val) {
     printf("Channel %d: decay mult = %d\n", ch, val);
     break;
   case 0x18:
-    val = val /32;
+    val = val / 32;
     function[ch] = val;
     printf("Channel %d: function = %s\n", ch,
-            (val == 0) ? "sine" :
-            (val == 1) ? "triangle" :
-            (val == 2) ? "saw" :
-            (val == 3) ? "square" : "unknown");
+           (val == 0)   ? "sine"
+           : (val == 1) ? "triangle"
+           : (val == 2) ? "saw"
+           : (val == 3) ? "square"
+                        : "unknown");
     break;
   case 0x19:
     multiplier[ch].release = val;
@@ -115,10 +123,17 @@ void synth_midi(uint8_t *message) {
     synth_note_off(channel, message[1], message[2]);
     break;
   case 0x90:
-    synth_note_on(channel, message[1], message[2]);
+    if (message[2]) {
+      synth_note_on(channel, message[1], message[2]);
+    } else {
+      synth_note_off(channel, message[1], message[2]);
+    }
     break;
   case 0xb0:
     synth_controller(channel, message[1], message[2]);
+    break;
+  case 0xc0:
+    synth_set_program(channel, message[1]);
     break;
   case 0xe0:
     pitch_bend[channel] = message[2];
@@ -138,7 +153,8 @@ int32_t synth_value(uint64_t tstep) {
 
     envelope_t *env = &envelope[osc->channel];
     // TODO: pitch bend
-    int32_t bend = pitch_bend_mult[pitch_bend[osc->channel]];;
+    int32_t bend = pitch_bend_mult[pitch_bend[osc->channel]];
+    ;
     int32_t v = osc_value(osc, bend, tstep);
     // Process the ADSR envelope.
     if (osc->state == OscOn)
